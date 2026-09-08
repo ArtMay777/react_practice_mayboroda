@@ -18,17 +18,25 @@ const products = productsFromServer.map(product => {
   return { ...product, category, user };
 });
 
-function getVisibleProducts(allProducts, selectedUserId) {
-  if (selectedUserId === null) {
-    return allProducts;
-  }
+function getVisibleProducts(allProducts, selectedUserId, query) {
+  const normalizedQuery = query.trim().toLowerCase();
 
-  return allProducts.filter(product => product.user.id === selectedUserId);
+  return allProducts.filter(product => {
+    const matchesUser =
+      selectedUserId === null || product.user.id === selectedUserId;
+
+    const matchesQuery = product.name.toLowerCase().includes(normalizedQuery);
+
+    return matchesUser && matchesQuery;
+  });
 }
+
+const DEFAULT_QUERY = '';
 
 export const App = () => {
   const [selectedUserId, setSelectedUserId] = useState(null);
-  const visibleProducts = getVisibleProducts(products, selectedUserId);
+  const [query, setQuery] = useState(DEFAULT_QUERY);
+  const visibleProducts = getVisibleProducts(products, selectedUserId, query);
 
   return (
     <div className="section">
@@ -72,21 +80,25 @@ export const App = () => {
                   type="text"
                   className="input"
                   placeholder="Search"
-                  value="qwe"
+                  value={query}
+                  onChange={event => setQuery(event.target.value)}
                 />
 
                 <span className="icon is-left">
                   <i className="fas fa-search" aria-hidden="true" />
                 </span>
 
-                <span className="icon is-right">
-                  {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
-                  <button
-                    data-cy="ClearButton"
-                    type="button"
-                    className="delete"
-                  />
-                </span>
+                {query !== DEFAULT_QUERY && (
+                  <span className="icon is-right">
+                    <button
+                      data-cy="ClearButton"
+                      type="button"
+                      aria-label="Clear search"
+                      className="delete"
+                      onClick={() => setQuery(DEFAULT_QUERY)}
+                    />
+                  </span>
+                )}
               </p>
             </div>
 
