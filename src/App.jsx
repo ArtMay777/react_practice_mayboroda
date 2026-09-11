@@ -18,7 +18,12 @@ const products = productsFromServer.map(product => {
   return { ...product, category, user };
 });
 
-function getVisibleProducts(allProducts, selectedUserId, query) {
+function getVisibleProducts(
+  allProducts,
+  selectedUserId,
+  query,
+  selectedCategoryIds,
+) {
   const normalizedQuery = query.trim().toLowerCase();
 
   return allProducts.filter(product => {
@@ -26,8 +31,11 @@ function getVisibleProducts(allProducts, selectedUserId, query) {
       selectedUserId === null || product.user.id === selectedUserId;
 
     const matchesQuery = product.name.toLowerCase().includes(normalizedQuery);
+    const matchesCategory =
+      selectedCategoryIds.length === 0 ||
+      selectedCategoryIds.includes(product.category.id);
 
-    return matchesUser && matchesQuery;
+    return matchesUser && matchesQuery && matchesCategory;
   });
 }
 
@@ -36,7 +44,23 @@ const DEFAULT_QUERY = '';
 export const App = () => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [query, setQuery] = useState(DEFAULT_QUERY);
-  const visibleProducts = getVisibleProducts(products, selectedUserId, query);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
+  const visibleProducts = getVisibleProducts(
+    products,
+    selectedUserId,
+    query,
+    selectedCategoryIds,
+  );
+
+  function handleCategoryToggle(categoryId) {
+    if (selectedCategoryIds.includes(categoryId)) {
+      setSelectedCategoryIds(
+        selectedCategoryIds.filter(id => id !== categoryId),
+      );
+    } else {
+      setSelectedCategoryIds([...selectedCategoryIds, categoryId]);
+    }
+  }
 
   return (
     <div className="section">
@@ -106,33 +130,27 @@ export const App = () => {
               <a
                 href="#/"
                 data-cy="AllCategories"
-                className="button is-success mr-6 is-outlined"
+                className={cn('button is-success mr-6', {
+                  'is-outlined': selectedCategoryIds.length > 0,
+                })}
+                onClick={() => setSelectedCategoryIds([])}
               >
                 All
               </a>
 
-              <a
-                data-cy="Category"
-                className="button mr-2 my-1 is-info"
-                href="#/"
-              >
-                Category 1
-              </a>
-
-              <a data-cy="Category" className="button mr-2 my-1" href="#/">
-                Category 2
-              </a>
-
-              <a
-                data-cy="Category"
-                className="button mr-2 my-1 is-info"
-                href="#/"
-              >
-                Category 3
-              </a>
-              <a data-cy="Category" className="button mr-2 my-1" href="#/">
-                Category 4
-              </a>
+              {categoriesFromServer.map(category => (
+                <a
+                  key={category.id}
+                  data-cy="Category"
+                  href="#/"
+                  className={cn('button mr-2 my-1', {
+                    'is-info': selectedCategoryIds.includes(category.id),
+                  })}
+                  onClick={() => handleCategoryToggle(category.id)}
+                >
+                  {category.title}
+                </a>
+              ))}
             </div>
 
             <div className="panel-block">
@@ -141,6 +159,7 @@ export const App = () => {
                 onClick={() => {
                   setSelectedUserId(null);
                   setQuery(DEFAULT_QUERY);
+                  setSelectedCategoryIds([]);
                 }}
                 href="#/"
                 className="button is-link is-outlined is-fullwidth"
