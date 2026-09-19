@@ -45,12 +45,70 @@ export const App = () => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [query, setQuery] = useState(DEFAULT_QUERY);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
+  const [sortField, setSortField] = useState(null);
+  const [sortOrder, setSortOrder] = useState(null);
   const visibleProducts = getVisibleProducts(
     products,
     selectedUserId,
     query,
     selectedCategoryIds,
   );
+  const sortedProducts = [...visibleProducts].sort((a, b) => {
+    if (!sortField || !sortOrder) {
+      return 0;
+    }
+
+    let aValue = a[sortField];
+    let bValue = b[sortField];
+
+    if (sortField === 'category') {
+      aValue = a.category.title;
+      bValue = b.category.title;
+    }
+
+    if (sortField === 'user') {
+      aValue = a.user.name;
+      bValue = b.user.name;
+    }
+
+    if (aValue < bValue) {
+      return sortOrder === 'asc' ? -1 : 1;
+    }
+
+    if (aValue > bValue) {
+      return sortOrder === 'asc' ? 1 : -1;
+    }
+
+    return 0;
+  });
+
+  function handleSort(field) {
+    if (field !== sortField) {
+      setSortField(field);
+      setSortOrder('asc');
+    } else if (sortOrder === 'asc') {
+      setSortOrder('desc');
+    } else {
+      setSortField(null);
+      setSortOrder(null);
+    }
+  }
+
+  function getSortIcon(field) {
+    if (field !== sortField) {
+      return 'fas fa-sort';
+    }
+
+    if (sortOrder === 'asc') {
+      return 'fas fa-sort-up';
+    }
+
+    if (sortOrder === 'desc') {
+      return 'fas fa-sort-down';
+    }
+
+    return 'fas fa-sort';
+  }
 
   function handleCategoryToggle(categoryId) {
     if (selectedCategoryIds.includes(categoryId)) {
@@ -186,9 +244,9 @@ export const App = () => {
                   <th>
                     <span className="is-flex is-flex-wrap-nowrap">
                       ID
-                      <a href="#/">
+                      <a href="#/" onClick={() => handleSort('id')}>
                         <span className="icon">
-                          <i data-cy="SortIcon" className="fas fa-sort" />
+                          <i data-cy="SortIcon" className={getSortIcon('id')} />
                         </span>
                       </a>
                     </span>
@@ -197,9 +255,12 @@ export const App = () => {
                   <th>
                     <span className="is-flex is-flex-wrap-nowrap">
                       Product
-                      <a href="#/">
+                      <a href="#/" onClick={() => handleSort('name')}>
                         <span className="icon">
-                          <i data-cy="SortIcon" className="fas fa-sort-down" />
+                          <i
+                            data-cy="SortIcon"
+                            className={getSortIcon('name')}
+                          />
                         </span>
                       </a>
                     </span>
@@ -208,9 +269,12 @@ export const App = () => {
                   <th>
                     <span className="is-flex is-flex-wrap-nowrap">
                       Category
-                      <a href="#/">
+                      <a href="#/" onClick={() => handleSort('category')}>
                         <span className="icon">
-                          <i data-cy="SortIcon" className="fas fa-sort-up" />
+                          <i
+                            data-cy="SortIcon"
+                            className={getSortIcon('category')}
+                          />
                         </span>
                       </a>
                     </span>
@@ -219,9 +283,12 @@ export const App = () => {
                   <th>
                     <span className="is-flex is-flex-wrap-nowrap">
                       User
-                      <a href="#/">
+                      <a href="#/" onClick={() => handleSort('user')}>
                         <span className="icon">
-                          <i data-cy="SortIcon" className="fas fa-sort" />
+                          <i
+                            data-cy="SortIcon"
+                            className={getSortIcon('user')}
+                          />
                         </span>
                       </a>
                     </span>
@@ -230,7 +297,7 @@ export const App = () => {
               </thead>
 
               <tbody>
-                {visibleProducts.map(product => (
+                {sortedProducts.map(product => (
                   <tr data-cy="Product" key={product.id}>
                     <td className="has-text-weight-bold" data-cy="ProductId">
                       {product.id}
